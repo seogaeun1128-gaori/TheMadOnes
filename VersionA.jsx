@@ -73,14 +73,8 @@ function VA_Title({ onStart }) {
           letterSpacing: '0.03em' }}>
           THE<br />MAD ONES
         </div>
-        <div style={{ marginTop: 14, display: 'flex', gap: 6, justifyContent: 'center' }}>
-          {['기억', '도망', '새벽'].map((w, i) => (
-            <span key={i} style={{
-              fontSize: 9, color: i === 1 ? '#e85c20' : 'rgba(255,255,255,0.4)',
-              padding: '4px 8px', border: `1px solid ${i === 1 ? '#e85c20' : 'rgba(255,255,255,0.15)'}`,
-              fontFamily: "'Galmuri14', 'Press Start 2P', monospace",
-            }}>{w}</span>
-          ))}
+        <div style={{ marginTop: 14, fontSize: 14, color: '#fff', textAlign: 'center' }}>
+          가자 지금이야 바로 오늘 밤
         </div>
       </div>
 

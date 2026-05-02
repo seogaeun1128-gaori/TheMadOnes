@@ -77,17 +77,8 @@ function VB_Title({ onStart }) {
             opacity: Math.sin(tick * 0.15) > 0.7 ? 0.8 : 0, mixBlendMode: 'screen',
           }} />
         </div>
-        <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-          {['기억', '도망', '새벽'].map((w, i) => (
-            <div key={i} style={{
-              padding: '5px 10px',
-              background: i === 1 ? 'rgba(203,89,255,0.15)' : 'transparent',
-              border: `1px solid ${i === 1 ? '#cb59ff' : 'rgba(203,89,255,0.25)'}`,
-              color: i === 1 ? '#cb59ff' : 'rgba(255,255,255,0.35)',
-              fontSize: 11, fontWeight: 600, letterSpacing: '0.05em',
-              boxShadow: i === 1 ? '0 0 10px rgba(203,89,255,0.3)' : 'none',
-            }}>{w}</div>
-          ))}
+        <div style={{ marginTop: 4, fontSize: 14, color: '#fff', textAlign: 'center' }}>
+          가자 지금이야 바로 오늘 밤
         </div>
       </div>
 
@@ -128,16 +119,16 @@ function VB_CharSelect({ onSelect, onBack }) {
     { id: 'sam', name: 'SAM', role: 'P1', accent: '#ff4d4d', glow: 'rgba(255,77,77,0.5)',
       tag: 'DEFAULT RUNNER',
       stats: [{ l: '속도', v: 72 }, { l: '회피', v: 58 }, { l: '체력', v: 85 }],
-      desc: '캘리포니아의 새벽을 달리는 소녀. 두려움 따위는 모른다.',
+      desc: '도로 위의 소년',
       palette: ['#5C3A1E', '#4A6080', '#E8C9A0'], unlocked: true,
-      img: 'assets/char-ohhyeon.png',
+      img: 'assets/char-sam.png',
     },
     { id: 'kelly', name: 'KELLY', role: 'P2', accent: '#4daaff', glow: 'rgba(77,170,255,0.5)',
       tag: 'LOCKED',
       stats: [{ l: '속도', v: 88 }, { l: '회피', v: 76 }, { l: '체력', v: 62 }],
-      desc: '밤의 클럽에서 온 소녀. 아무도 그녀를 따라잡지 못한다.',
+      desc: '초신성',
       palette: ['#1C2E3A', '#B22222', '#E8C9A0'], unlocked: false,
-      img: 'assets/char-seoyuna.png',
+      img: 'assets/char-kelly.png',
     },
   ];
   const c = chars[idx];
@@ -262,7 +253,7 @@ function VB_WordInput({ character, words, setWords, onStart, onBack }) {
     const t = input.trim();
     if (t && words.length < MAX && !words.includes(t)) { setWords(w => [...w, t]); setInput(''); }
   };
-  const presets = ['그리움', '탈출', '흔적', '소문'];
+  const presets = ['길 위에서', '애덤', '베벌리', '나에게는 오직 미친 사람들 뿐이다'];
 
   return (
     <div style={{ width: '100%', height: '100%', background: '#06000f',
@@ -374,7 +365,7 @@ function VB_GameHUD({ character, stage, onGameOver }) {
   };
   const c = cfgs[stage] || cfgs[3];
   const charAccent = character === 'kelly' ? '#4daaff' : c.accent;
-  const charImg = character === 'kelly' ? 'assets/char-seoyuna.png' : 'assets/char-ohhyeon.png';
+  const charImg = character === 'kelly' ? 'assets/char-kelly.png' : 'assets/char-sam.png';
   const ROAD = 186;
 
   // 캐릭터 히트박스 크기 (px, 화면 기준)
@@ -611,7 +602,7 @@ function VB_GameOver({ score, stage, character, hitWord, onRestart, onHome }) {
   const accents = { 1: '#e85c20', 2: '#7aaa60', 3: '#cb59ff', 4: '#f5d06a' };
   const accent = accents[stage] || '#cb59ff';
   const charName = character === 'kelly' ? 'KELLY' : 'SAM';
-  const charImg = character === 'kelly' ? 'assets/char-seoyuna.png' : 'assets/char-ohhyeon.png';
+  const charImg = character === 'kelly' ? 'assets/char-kelly.png' : 'assets/char-sam.png';
   const charAccent = character === 'kelly' ? '#4daaff' : '#ff4d4d';
   const [animate, setAnimate] = React.useState(false);
   const [flash, setFlash] = React.useState(true);
