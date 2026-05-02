@@ -500,7 +500,7 @@ function VB_GameHUD({ character, stage, onGameOver, onStageClear }) {
           <div key={i} style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)',
             width: 3, height: 24, borderRadius: 2,
             background: stage === 3 ? 'rgba(0,229,255,0.25)' : 'rgba(255,255,255,0.18)',
-            top: `${((i * 60 - dashOff + 720) % 720) - 24}px` }} />
+            top: `${((i * 60 + dashOff) % 720) - 24}px` }} />
         ))}
       </div>
 
