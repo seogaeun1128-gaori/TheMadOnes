@@ -168,7 +168,7 @@ function VB_CharSelect({ onSelect, onBack }) {
 
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
             <div style={{ position: 'relative' }}>
-              <div style={{ width: 96, height: 128, border: `2px solid ${c.accent}`,
+              <div style={{ width: 68, height: 96, border: `2px solid ${c.accent}`,
                 background: 'rgba(0,0,0,0.5)', overflow: 'hidden',
                 boxShadow: `0 0 28px ${c.glow}`, opacity: c.unlocked ? 1 : 0.45,
                 display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
