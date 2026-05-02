@@ -16,7 +16,7 @@ function VersionB() {
       {screen === 'title'      && <VB_Title onStart={() => go('charselect')} />}
       {screen === 'charselect' && <VB_CharSelect onSelect={(c) => { setCharacter(c); go('wordinput'); }} onBack={() => go('title')} />}
       {screen === 'wordinput'  && <VB_WordInput character={character} words={words} setWords={setWords} onStart={() => { setStage(1); setFinalScore(0); go('gamehud'); }} onBack={() => go('charselect')} />}
-      {screen === 'gamehud'    && <VB_GameHUD key={stage} character={character} stage={stage} onGameOver={(sc, w) => { setFinalScore(sc); setHitWord(w); go('gameover'); }} onStageClear={(sc) => { setFinalScore(f => f + sc); if (stage >= 4) { go('gameclear'); } else { setStage(s => s + 1); } }} />}
+      {screen === 'gamehud'    && <VB_GameHUD key={stage} character={character} stage={stage} words={words} onGameOver={(sc, w) => { setFinalScore(sc); setHitWord(w); go('gameover'); }} onStageClear={(sc) => { setFinalScore(f => f + sc); if (stage >= 4) { go('gameclear'); } else { setStage(s => s + 1); } }} />}
       {screen === 'gameover'   && <VB_GameOver score={finalScore} stage={stage} character={character} hitWord={hitWord} onRestart={() => { setStage(1); setFinalScore(0); go('gamehud'); }} onHome={() => { setStage(1); go('title'); }} />}
       {screen === 'gameclear'  && <VB_GameClear score={finalScore} character={character} onHome={() => { setStage(1); setFinalScore(0); go('title'); }} />}
     </div>
@@ -357,7 +357,7 @@ function VB_WordInput({ character, words, setWords, onStart, onBack }) {
 }
 
 // ─── Game HUD (충돌 감지 포함) ───────────────────────────────────────────
-function VB_GameHUD({ character, stage, onGameOver, onStageClear }) {
+function VB_GameHUD({ character, stage, words: initialWords, onGameOver, onStageClear }) {
   const cfgs = {
     1: { bg: '#0d1526', road: '#1a2a4a', edge: '#c04020', accent: '#e85c20', label: 'STAGE 1', wordCol: ['#fff','#e85c20','rgba(255,255,255,0.7)'] },
     2: { bg: '#4a9d5f', road: '#5a8a9a', edge: '#6aaa50', accent: '#1a3a5a', label: 'STAGE 2', wordCol: ['#1a3a5a','#2e4d6b','#3a6020'] },
@@ -383,7 +383,7 @@ function VB_GameHUD({ character, stage, onGameOver, onStageClear }) {
   const [frame, setFrame] = React.useState(0);
   const [addWordOpen, setAddWordOpen] = React.useState(false);
   const [newWord, setNewWord] = React.useState('');
-  const [pool, setPool] = React.useState(['나아가']);
+  const [pool, setPool] = React.useState(initialWords && initialWords.length > 0 ? initialWords : ['나아가']);
   const [hit, setHit] = React.useState(false);
   const [timeLeft, setTimeLeft] = React.useState(STAGE_TIME);
   const [stageClear, setStageClear] = React.useState(false);
@@ -696,7 +696,7 @@ function VB_GameOver({ score, stage, character, hitWord, onRestart, onHome }) {
             width: '100%', height: '100%',
             objectFit: 'cover', objectPosition: 'top center',
             imageRendering: 'pixelated',
-            transform: 'rotate(90deg) scaleX(-1)',
+            transform: 'rotate(-90deg) scaleX(-1)',
             transformOrigin: 'center center',
           }} />
         </div>
