@@ -704,7 +704,7 @@ function VB_GameOver({ score, stage, character, hitWord, onRestart, onHome }) {
           }} />
         </div>
         <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', fontWeight: 500 }}>
-          {charName}이 붙잡혔다
+          {charName}는 자유를 원해요
         </div>
         {hitWord && (
           <div style={{ marginTop: 8, display: 'inline-block',
