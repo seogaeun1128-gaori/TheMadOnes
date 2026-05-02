@@ -282,7 +282,7 @@ function VA_GameHUD({ character, stage, onGameOver }) {
   const cfgs = {
     1: { bg: '#0d1526', road: '#1a2a4a', edge: '#2a3a5a', dash: 'rgba(255,255,255,0.18)',
          accent: '#e85c20', label: 'STAGE 1', wordCol: ['#fff','#e85c20','rgba(255,255,255,0.7)'] },
-    2: { bg: '#87ceeb', road: '#8abcd4', edge: '#6aaa50', dash: 'rgba(255,255,255,0.5)',
+    2: { bg: '#4a9d5f', road: '#5a8a9a', edge: '#6aaa50', dash: 'rgba(255,255,255,0.5)',
          accent: '#1a3a5a', label: 'STAGE 2', wordCol: ['#1a3a5a','#2e4d6b','#3a6020'] },
     3: { bg: '#0a0015', road: '#1a0030', edge: '#2d0050', dash: 'rgba(0,229,255,0.3)',
          accent: '#cb59ff', label: 'STAGE 3', wordCol: ['#00e5ff','#cb59ff','#ff006e'] },

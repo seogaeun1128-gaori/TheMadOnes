@@ -5,7 +5,7 @@ function VersionB() {
   const [screen, setScreen] = React.useState('title');
   const [character, setCharacter] = React.useState('sam');
   const [words, setWords] = React.useState(['나아가']);
-  const [stage] = React.useState(3);
+  const [stage, setStage] = React.useState(1);
   const [finalScore, setFinalScore] = React.useState(0);
   const [hitWord, setHitWord] = React.useState('');
 
@@ -15,9 +15,10 @@ function VersionB() {
     <div style={{ width: '100%', height: '100%' }}>
       {screen === 'title'      && <VB_Title onStart={() => go('charselect')} />}
       {screen === 'charselect' && <VB_CharSelect onSelect={(c) => { setCharacter(c); go('wordinput'); }} onBack={() => go('title')} />}
-      {screen === 'wordinput'  && <VB_WordInput character={character} words={words} setWords={setWords} onStart={() => go('gamehud')} onBack={() => go('charselect')} />}
-      {screen === 'gamehud'    && <VB_GameHUD character={character} stage={stage} onGameOver={(sc, w) => { setFinalScore(sc); setHitWord(w); go('gameover'); }} />}
-      {screen === 'gameover'   && <VB_GameOver score={finalScore} stage={stage} character={character} hitWord={hitWord} onRestart={() => go('gamehud')} onHome={() => go('title')} />}
+      {screen === 'wordinput'  && <VB_WordInput character={character} words={words} setWords={setWords} onStart={() => { setStage(1); setFinalScore(0); go('gamehud'); }} onBack={() => go('charselect')} />}
+      {screen === 'gamehud'    && <VB_GameHUD key={stage} character={character} stage={stage} onGameOver={(sc, w) => { setFinalScore(sc); setHitWord(w); go('gameover'); }} onStageClear={(sc) => { setFinalScore(f => f + sc); if (stage >= 4) { go('gameclear'); } else { setStage(s => s + 1); } }} />}
+      {screen === 'gameover'   && <VB_GameOver score={finalScore} stage={stage} character={character} hitWord={hitWord} onRestart={() => { setStage(1); setFinalScore(0); go('gamehud'); }} onHome={() => { setStage(1); go('title'); }} />}
+      {screen === 'gameclear'  && <VB_GameClear score={finalScore} character={character} onHome={() => { setStage(1); setFinalScore(0); go('title'); }} />}
     </div>
   );
 }
@@ -356,19 +357,21 @@ function VB_WordInput({ character, words, setWords, onStart, onBack }) {
 }
 
 // ─── Game HUD (충돌 감지 포함) ───────────────────────────────────────────
-function VB_GameHUD({ character, stage, onGameOver }) {
+function VB_GameHUD({ character, stage, onGameOver, onStageClear }) {
   const cfgs = {
     1: { bg: '#0d1526', road: '#1a2a4a', edge: '#c04020', accent: '#e85c20', label: 'STAGE 1', wordCol: ['#fff','#e85c20','rgba(255,255,255,0.7)'] },
-    2: { bg: '#87ceeb', road: '#8abcd4', edge: '#6aaa50', accent: '#1a3a5a', label: 'STAGE 2', wordCol: ['#1a3a5a','#2e4d6b','#3a6020'] },
+    2: { bg: '#4a9d5f', road: '#5a8a9a', edge: '#6aaa50', accent: '#1a3a5a', label: 'STAGE 2', wordCol: ['#1a3a5a','#2e4d6b','#3a6020'] },
     3: { bg: '#06000f', road: '#120020', edge: '#4d0080', accent: '#cb59ff', label: 'STAGE 3', wordCol: ['#00e5ff','#cb59ff','#ff006e'] },
     4: { bg: '#0e0905', road: '#1c1008', edge: '#3a2010', accent: '#f5d06a', label: 'STAGE 4', wordCol: ['#f5d06a','rgba(245,208,106,0.6)','#fff'] },
   };
-  const c = cfgs[stage] || cfgs[3];
+  const c = cfgs[stage] || cfgs[1];
   const charAccent = character === 'kelly' ? '#4daaff' : c.accent;
   const charImg = character === 'kelly' ? 'assets/char-kelly.png' : 'assets/char-sam.png';
-  const ROAD = 186;
+  const ROAD_MARGIN = 20;
+  const SPEED_MULT = { 1: 1.0, 2: 1.4, 3: 1.8, 4: 2.3 };
+  const speedMult = SPEED_MULT[stage] || 1.0;
+  const STAGE_TIME = 20;
 
-  // 캐릭터 히트박스 크기 (px, 화면 기준)
   const CHAR_W = 32;
   const CHAR_H = 48;
 
@@ -381,27 +384,58 @@ function VB_GameHUD({ character, stage, onGameOver }) {
   const [addWordOpen, setAddWordOpen] = React.useState(false);
   const [newWord, setNewWord] = React.useState('');
   const [pool, setPool] = React.useState(['나아가']);
-  const [hit, setHit] = React.useState(false); // 충돌 플래시
+  const [hit, setHit] = React.useState(false);
+  const [timeLeft, setTimeLeft] = React.useState(STAGE_TIME);
+  const [stageClear, setStageClear] = React.useState(false);
+  const [roadW, setRoadW] = React.useState(335);
   const nextId = React.useRef(0);
   const gameOverFired = React.useRef(false);
+  const stageClearFired = React.useRef(false);
+  const timerRef = React.useRef(STAGE_TIME);
+  const scoreRef = React.useRef(0);
+  const roadRef = React.useRef(335);
 
-  // 화면 높이 추적 (충돌 계산용)
   const containerRef = React.useRef(null);
+
+  React.useEffect(() => {
+    if (containerRef.current) {
+      const w = Math.max(260, containerRef.current.clientWidth - ROAD_MARGIN * 2);
+      roadRef.current = w;
+      setRoadW(w);
+    }
+  }, []);
+
+  React.useEffect(() => { scoreRef.current = score; }, [score]);
+
+  React.useEffect(() => {
+    if (paused || stageClearFired.current) return;
+    const t = setInterval(() => {
+      if (gameOverFired.current || stageClearFired.current) return;
+      timerRef.current -= 1;
+      setTimeLeft(timerRef.current);
+      if (timerRef.current <= 0) {
+        stageClearFired.current = true;
+        setStageClear(true);
+        setTimeout(() => onStageClear(scoreRef.current), 1200);
+      }
+    }, 1000);
+    return () => clearInterval(t);
+  }, [paused]);
 
   // Spawn words
   React.useEffect(() => {
     if (paused || pool.length === 0) return;
     const t = setInterval(() => {
       const w = pool[Math.floor(Math.random() * pool.length)];
-      const x = (Math.random() * (ROAD - 60)) - (ROAD / 2 - 30);
-      setWords(ws => [...ws, { id: nextId.current++, text: w, x, y: -4, spd: 0.3 + Math.random() * 0.25, ci: Math.floor(Math.random() * 3) }]);
+      const x = (Math.random() * (roadRef.current - 60)) - (roadRef.current / 2 - 30);
+      setWords(ws => [...ws, { id: nextId.current++, text: w, x, y: -4, spd: (0.3 + Math.random() * 0.25) * speedMult, ci: Math.floor(Math.random() * 3) }]);
     }, 1500 + Math.random() * 600);
     return () => clearInterval(t);
   }, [paused, pool]);
 
   // Game loop + collision detection
   React.useEffect(() => {
-    if (paused || gameOverFired.current) return;
+    if (paused || gameOverFired.current || stageClearFired.current) return;
     const t = setInterval(() => {
       setScore(s => s + 2);
       setDashOff(d => (d + 3) % 60);
@@ -410,27 +444,18 @@ function VB_GameHUD({ character, stage, onGameOver }) {
       setWords(ws => {
         const next = ws.map(w => ({ ...w, y: w.y + w.spd * 1.6 })).filter(w => w.y < 106);
 
-        // 충돌 감지
-        // 캐릭터는 bottom: 72px 고정, 화면 높이 기준 y% 계산
-        // containerRef에서 실제 height 가져옴
         const containerH = containerRef.current?.clientHeight || 768;
-        // 캐릭터 상단 y%
         const charTopPct = ((containerH - 72 - CHAR_H) / containerH) * 100;
         const charBotPct = ((containerH - 72) / containerH) * 100;
 
         for (const w of next) {
-          if (gameOverFired.current) break;
-          // 단어 y가 캐릭터 범위 안에 있는지
+          if (gameOverFired.current || stageClearFired.current) break;
           if (w.y >= charTopPct - 3 && w.y <= charBotPct + 3) {
-            // x 충돌: 캐릭터 중심 = charX, 단어 중심 = w.x
-            // 캐릭터 좌우: charX ± CHAR_W/2, 단어 폭 대략 ±25px
             const dx = Math.abs(charX - w.x);
             if (dx < CHAR_W / 2 + 20) {
               gameOverFired.current = true;
               setHit(true);
-              setTimeout(() => {
-                onGameOver(score, w.text);
-              }, 400);
+              setTimeout(() => onGameOver(score, w.text), 400);
             }
           }
         }
@@ -444,7 +469,7 @@ function VB_GameHUD({ character, stage, onGameOver }) {
     if (addWordOpen || gameOverFired.current) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const x = (e.touches?.[0]?.clientX ?? e.clientX) - rect.left;
-    const max = ROAD / 2 - 24;
+    const max = roadRef.current / 2 - 24;
     setCharX(cx => x < rect.width / 2 ? Math.max(-max, cx - 22) : Math.min(max, cx + 22));
   };
 
@@ -467,7 +492,7 @@ function VB_GameHUD({ character, stage, onGameOver }) {
       )}
 
       {/* Road */}
-      <div style={{ position: 'absolute', left: '50%', top: 0, width: ROAD, height: '100%',
+      <div style={{ position: 'absolute', left: '50%', top: 0, width: roadW, height: '100%',
         transform: 'translateX(-50%)', background: c.road,
         borderLeft: `2px solid ${c.edge}`, borderRight: `2px solid ${c.edge}`,
         boxShadow: stage === 3 ? '0 0 30px rgba(77,0,128,0.6)' : 'none' }}>
@@ -517,8 +542,13 @@ function VB_GameHUD({ character, stage, onGameOver }) {
         background: 'rgba(0,0,0,0.6)',
         display: 'flex', alignItems: 'center', gap: 8, zIndex: 10,
         borderBottom: `1px solid ${c.accent}33` }}>
-        <div style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 7, color: c.accent,
-          border: `1px solid ${c.accent}55`, padding: '3px 6px' }}>{c.label}</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <div style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 7, color: c.accent,
+            border: `1px solid ${c.accent}55`, padding: '3px 6px' }}>{c.label}</div>
+          <div style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 6, color: `${c.accent}bb`, paddingLeft: 2 }}>
+            {Math.max(0, timeLeft)}s
+          </div>
+        </div>
         <div style={{ flex: 1, textAlign: 'center', fontFamily: "'Press Start 2P', monospace", fontSize: 12, color: '#fff' }}>
           {score.toLocaleString()}<span style={{ fontSize: 8, color: 'rgba(255,255,255,0.4)' }}>m</span>
         </div>
@@ -591,6 +621,16 @@ function VB_GameHUD({ character, stage, onGameOver }) {
             background: 'transparent', color: 'rgba(255,255,255,0.4)',
             border: '1px solid rgba(255,255,255,0.15)', padding: '10px 24px',
             fontFamily: "'Press Start 2P', monospace", fontSize: 8, cursor: 'pointer' }}>QUIT</button>
+        </div>
+      )}
+
+      {stageClear && (
+        <div style={{ position: 'absolute', inset: 0, zIndex: 25, background: 'rgba(6,0,15,0.9)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12,
+          fontFamily: "'Press Start 2P', monospace", pointerEvents: 'none' }}>
+          <div style={{ fontSize: 9, color: '#f5d06a', letterSpacing: '0.15em' }}>STAGE {stage}</div>
+          <div style={{ fontSize: 24, color: c.accent, textShadow: `0 0 28px ${c.accent}` }}>CLEAR!</div>
+          {stage < 4 && <div style={{ marginTop: 8, fontSize: 8, color: 'rgba(255,255,255,0.45)' }}>STAGE {stage + 1} ▶</div>}
         </div>
       )}
     </div>
@@ -711,6 +751,96 @@ function VB_GameOver({ score, stage, character, hitWord, onRestart, onHome }) {
           background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.45)',
           border: '1px solid rgba(255,255,255,0.12)',
           fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>⌂ 타이틀</button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Game Clear ───────────────────────────────────────────────────────────
+function VB_GameClear({ score, character, onHome }) {
+  const charName = character === 'kelly' ? 'KELLY' : 'SAM';
+  const charImg = character === 'kelly' ? 'assets/char-kelly.png' : 'assets/char-sam.png';
+  const charAccent = character === 'kelly' ? '#4daaff' : '#ff4d4d';
+  const [tick, setTick] = React.useState(0);
+  const [animate, setAnimate] = React.useState(false);
+  React.useEffect(() => {
+    const t = setInterval(() => setTick(n => n + 1), 60);
+    setTimeout(() => setAnimate(true), 400);
+    return () => clearInterval(t);
+  }, []);
+  const particles = React.useMemo(() => Array.from({ length: 40 }, (_, i) => ({
+    x: Math.random() * 100, y: Math.random() * 100,
+    r: 1 + Math.random() * 3,
+    color: ['#cb59ff', '#00e5ff', '#ff006e', '#f5d06a', '#fff'][i % 5],
+    speed: 0.2 + Math.random() * 0.4, phase: Math.random() * Math.PI * 2,
+  })), []);
+
+  return (
+    <div style={{ width: '100%', height: '100%', background: '#06000f',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between',
+      padding: '48px 24px 40px', color: '#fff', fontFamily: "'Pretendard JP', sans-serif",
+      position: 'relative', overflow: 'hidden' }}>
+
+      {particles.map((p, i) => (
+        <div key={i} style={{
+          position: 'absolute', left: `${p.x}%`,
+          top: `${(p.y + tick * p.speed * 0.05) % 100}%`,
+          width: p.r, height: p.r, borderRadius: '50%',
+          background: p.color, opacity: 0.5 + Math.sin(tick * 0.05 + p.phase) * 0.3,
+          boxShadow: `0 0 ${p.r * 4}px ${p.color}`, zIndex: 0,
+        }} />
+      ))}
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 1,
+        backgroundImage: 'repeating-linear-gradient(0deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 4px)' }} />
+
+      <div style={{ textAlign: 'center', zIndex: 2 }}>
+        <div style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 9, color: '#f5d06a',
+          letterSpacing: '0.15em', marginBottom: 16 }}>ALL STAGES CLEAR</div>
+        <div style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 26, color: '#cb59ff',
+          textShadow: '0 0 28px rgba(203,89,255,0.9), 0 0 60px rgba(0,229,255,0.4)', lineHeight: 1.2 }}>
+          GAME<br />CLEAR
+        </div>
+        <div style={{ margin: '16px auto 8px', width: 56, height: 72,
+          border: `2px solid ${charAccent}`, background: 'rgba(0,0,0,0.4)', overflow: 'hidden',
+          boxShadow: `0 0 24px ${charAccent}88` }}>
+          <img src={charImg} alt={charName} style={{
+            width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center',
+            imageRendering: 'pixelated' }} />
+        </div>
+        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', fontWeight: 500 }}>{charName} escaped</div>
+      </div>
+
+      <div style={{ width: '100%', background: 'rgba(255,255,255,0.04)',
+        border: '1px solid rgba(203,89,255,0.4)', padding: '20px', zIndex: 2 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>총 점수</div>
+          <div style={{ fontSize: 28, fontWeight: 800, color: '#fff',
+            textShadow: '0 0 14px #cb59ff', fontFamily: "'Press Start 2P', monospace",
+            transform: animate ? 'translateX(0)' : 'translateX(20px)',
+            opacity: animate ? 1 : 0, transition: 'all 0.5s ease' }}>
+            {(score || 0).toLocaleString()}<span style={{ fontSize: 12 }}>m</span>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+          {[1,2,3,4].map(s => (
+            <div key={s} style={{ flex: 1, height: 4,
+              background: 'linear-gradient(90deg, #cb59ff, #00e5ff)',
+              boxShadow: '0 0 6px rgba(203,89,255,0.6)',
+              opacity: animate ? 1 : 0, transition: `opacity 0.3s ease ${s * 0.1}s` }} />
+          ))}
+        </div>
+        <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', textAlign: 'center',
+          fontFamily: "'Press Start 2P', monospace" }}>STAGE 1 - 4 COMPLETE</div>
+      </div>
+
+      <div style={{ width: '100%', zIndex: 2 }}>
+        <button onClick={onHome} style={{
+          width: '100%', padding: '16px',
+          background: 'linear-gradient(135deg, #cb59ff, #9b30cf)',
+          color: '#fff', border: 'none',
+          fontSize: 13, fontWeight: 700, letterSpacing: '0.08em',
+          fontFamily: "'Press Start 2P', monospace",
+          cursor: 'pointer', boxShadow: '0 0 28px rgba(203,89,255,0.55)' }}>⌂ 타이틀로</button>
       </div>
     </div>
   );
