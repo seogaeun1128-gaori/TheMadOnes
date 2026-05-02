@@ -476,7 +476,8 @@ function VB_GameHUD({ character, stage, words: initialWords, onGameOver, onStage
     const t = setInterval(() => {
       const w = pool[Math.floor(Math.random() * pool.length)];
       const x = (Math.random() * (roadRef.current - 60)) - (roadRef.current / 2 - 30);
-      setWords(ws => [...ws, { id: nextId.current++, text: w, x, y: -4, spd: (0.3 + Math.random() * 0.25) * speedMult, ci: Math.floor(Math.random() * 3) }]);
+      const fs = Math.round(12 * (0.7 + Math.random() * 0.5));
+      setWords(ws => [...ws, { id: nextId.current++, text: w, x, y: -4, spd: (0.3 + Math.random() * 0.25) * speedMult, ci: Math.floor(Math.random() * 3), fs }]);
     }, spawnBase + Math.random() * spawnRand);
     return () => clearInterval(t);
   }, [paused, pool]);
@@ -553,7 +554,7 @@ function VB_GameHUD({ character, stage, words: initialWords, onGameOver, onStage
           position: 'absolute', left: `calc(50% + ${w.x}px)`, top: `${w.y}%`,
           transform: 'translateX(-50%)',
           fontFamily: "'Galmuri14', 'Press Start 2P', monospace",
-          fontSize: 12, color: c.wordCol[w.ci], pointerEvents: 'none', zIndex: 5, whiteSpace: 'nowrap',
+          fontSize: w.fs || 12, color: c.wordCol[w.ci], pointerEvents: 'none', zIndex: 5, whiteSpace: 'nowrap',
           textShadow: stage === 3 ? `0 0 10px ${c.wordCol[w.ci]}, 0 0 20px ${c.wordCol[w.ci]}66` : 'none',
         }}>{w.text}</div>
       ))}
