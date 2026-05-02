@@ -527,14 +527,14 @@ function VB_GameHUD({ character, stage, words: initialWords, onGameOver, onStage
         <div style={{
           width: CHAR_W, height: CHAR_H,
           border: 'none',
-          background: 'transparent', overflow: 'hidden',
+          background: 'transparent',
           boxShadow: 'none',
           marginBottom: bounce,
           position: 'relative',
         }}>
           <img src={charImg} alt={character} style={{
             width: '100%', height: '100%',
-            objectFit: 'cover', objectPosition: 'top center',
+            objectFit: 'contain', objectPosition: 'center bottom',
             imageRendering: 'pixelated',
           }} />
         </div>
