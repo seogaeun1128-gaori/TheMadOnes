@@ -417,6 +417,8 @@ function VB_GameHUD({ character, stage, words: initialWords, onGameOver, onStage
   const ROAD_MARGIN = 20;
   const SPEED_MULT = { 1: 1.0, 2: 1.4, 3: 1.8, 4: 2.3 };
   const speedMult = SPEED_MULT[stage] || 1.0;
+  const SPAWN_INTERVAL = { 1: [1500, 600], 2: [1100, 500], 3: [800, 400], 4: [550, 300] };
+  const [spawnBase, spawnRand] = SPAWN_INTERVAL[stage] || SPAWN_INTERVAL[1];
   const STAGE_TIME = 20;
 
   const CHAR_W = 32;
@@ -475,7 +477,7 @@ function VB_GameHUD({ character, stage, words: initialWords, onGameOver, onStage
       const w = pool[Math.floor(Math.random() * pool.length)];
       const x = (Math.random() * (roadRef.current - 60)) - (roadRef.current / 2 - 30);
       setWords(ws => [...ws, { id: nextId.current++, text: w, x, y: -4, spd: (0.3 + Math.random() * 0.25) * speedMult, ci: Math.floor(Math.random() * 3) }]);
-    }, 1500 + Math.random() * 600);
+    }, spawnBase + Math.random() * spawnRand);
     return () => clearInterval(t);
   }, [paused, pool]);
 
